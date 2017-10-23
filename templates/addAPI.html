@@ -3,15 +3,19 @@
 {% block content %}
 <h1>新增API</h1>
 <p>把要開放的API上架吧</p>
-<form action="/addAPI" method="post">
-  <input type="hidden" name="apiid" value="{{apiid}}">
-  API Name:<br>
-  <input type="text" name="name">
-  <br>
-  API Description:<br>
-  <input type="text" name="desc">
-  <br>
-  <input type="submit" value="Submit">
-  <br>
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  <dl>
+    {{ render_field(form.apiid) }}
+    {{ render_field(form.version) }}
+    {{ render_field(form.group) }}
+    {{ render_field(form.description) }}
+    {{ render_field(form.params) }}
+    {{ render_field(form.example) }}
+    {{ render_field(form.success) }}
+    {{ render_field(form.error) }}
+  </dl>
+  <p><input type=submit value='add description'>
 </form>
+
 {% endblock content %}

@@ -6,14 +6,15 @@ from flask import render_template
 from flask import request
 from flask import Flask, g
 from flask import Flask, redirect, url_for
+from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, validators
 
 app = Flask(__name__)
 
 SQLITE_DB_PATH = 'apidoc.db'
 APIList = []
 # The Endpoint of base URL
-#kongurl = "http://10.12.0.6:8001"
-kongurl = "http://172.17.0.3:8001"
+kongurl = "http://10.12.0.10:8001"
+#kongurl = "http://172.17.0.3:8001"
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -28,6 +29,17 @@ def dict_factory(cursor, row):
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
+
+
+class apiForm(Form):
+    apiid = HiddenField('apiid')
+    version = StringField('Version', [validators.Length(min=1, max=64)])
+    group = StringField('Group', [validators.Length(min=1, max=64)])
+    description = TextAreaField('Description', [validators.optional(), validators.length(max=2048)])
+    params = TextAreaField('Params', [validators.optional(), validators.length(max=2048)])
+    example = TextAreaField('Example', [validators.optional(), validators.length(max=2048)])
+    success = TextAreaField('Success', [validators.optional(), validators.length(max=2048)])
+    error = TextAreaField('Error', [validators.optional(), validators.length(max=2048)])
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -91,11 +103,13 @@ def index():
 @app.route('/addAPI', methods=['GET', 'POST'])
 def addAPI():
     params = None
+    form = apiForm(request.form)
     if request.method == 'GET':
         apiId = request.args.get('apiid', '000')
+        form.apiid = apiId
         return render_template(
             'addAPI.html',
-            apiid=apiId,
+            form=form
             )
     if request.method == 'POST':
         apiID = request.form.get('apiid', "000")
