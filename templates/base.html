@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>{% block title %}API 說明{% endblock title %}</title>
+<link rel="stylesheet" href="static/style.css" />
   </head>
   <body>
     {% block content %}{% endblock content %}
@@ -12,6 +13,7 @@
     <h3>API列表</h3>
     <ul>
       <li><a href="/">首頁</a></li>
+      <li><a href="/addAPI">ADD API</a></li>
       {% block listapi %}{% endblock listapi %}
     </ul>
   </body>

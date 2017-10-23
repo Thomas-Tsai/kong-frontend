@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block listapi %}
+<p>API:{{api.name}}</p>
+<p>
+Short Name: {{api.shortname}}
+Group Name: {{api.apigroup}}
+Description: {{api.apigroup}}
+<a href="/updateAPI?apiid={{api.apiid}}">update</a>
+<a href="/deleteAPI?apiid={{api.apiid}}">deltet</a>
+</p>
+<p>
+
+</p>
+{% endblock listapi %} 
