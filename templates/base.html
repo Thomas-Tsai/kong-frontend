@@ -1,0 +1,18 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{% block title %}API 說明{% endblock title %}</title>
+  </head>
+  <body>
+    {% block content %}{% endblock content %}
+    <hr>
+    <h3>API列表</h3>
+    <ul>
+      <li><a href="/">首頁</a></li>
+      {% block listapi %}{% endblock listapi %}
+    </ul>
+  </body>
+</html>

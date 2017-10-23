@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block listapi %}
+<p>apis:</p>
+{% for api in  api_list%}
+<ul>
+   {% for key, value in api.items() %}
+      <li>{{key}} : {{value}}</li>
+   {% endfor %}
+   <li><a href="/addAPI?apiid={{api.apiid}}">update desc</a></li>
+</ul>
+{% endfor %}
+{% endblock listapi %} 

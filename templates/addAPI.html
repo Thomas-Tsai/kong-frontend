@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>新增API</h1>
+<p>把要開放的API上架吧</p>
+<form action="/addAPI" method="post">
+  <input type="hidden" name="apiid" value="{{apiid}}">
+  API Name:<br>
+  <input type="text" name="name">
+  <br>
+  API Description:<br>
+  <input type="text" name="desc">
+  <br>
+  <input type="submit" value="Submit">
+  <br>
+</form>
+{% endblock content %}
