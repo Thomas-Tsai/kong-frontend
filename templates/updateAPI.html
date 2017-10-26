@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>修改API</h1>
+{% from "_formhelpers.html" import render_field %}
+<form method='post' action="/saveAPI">
+  <dl>
+    {{ render_field(form.apiid) }}
+    {{ render_field(form.version) }}
+    {{ render_field(form.name) }}
+    {{ render_field(form.shortname) }}
+    {{ render_field(form.host) }}
+    {{ render_field(form.uri) }}
+    {{ render_field(form.method) }}
+    {{ render_field(form.group) }}
+    {{ render_field(form.description) }}
+    {{ render_field(form.params) }}
+    {{ render_field(form.example) }}
+    {{ render_field(form.success) }}
+    {{ render_field(form.error) }}
+  </dl>
+  <p><input type=submit value='update description'>
+</form>
+
+{% endblock content %}
