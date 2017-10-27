@@ -5,10 +5,10 @@
 {% from "_formhelpers.html" import render_field %}
 <form method='post' action="/saveAPI">
   <dl>
-    {{ render_field(form.apiid) }}
-    {{ render_field(form.version) }}
+    {{ form['apiid'] }}
     {{ render_field(form.name) }}
     {{ render_field(form.shortname) }}
+    {{ render_field(form.version) }}
     {{ render_field(form.host) }}
     {{ render_field(form.uri) }}
     {{ render_field(form.method) }}

@@ -1,17 +1,36 @@
 {% extends "base.html" %}
-{% block listapi %}
-<p>API:{{api.name}}</p>
-{% for key, value in api.items() %}
-  {{key}} = {{value}} <br>
-{% endfor %}
+{% block content %}
+<h3>{{api.name}}</h3>
+<h4>{{api.shortname}} (V: {{api.version}})</h4>
+<h4>{{api.desc}}</h4>
+<h4>Host</h4>
+<div class="host">{{api.hosts[0]}}</div>
+<h4>Endpoint</h4>
+<div class="endpoint {{api.methods[0].lower()}}">{{api.uris[0]}}</div>
+<h4 id="request-body">Request Body</h4>
+<div class="params">
+{{api.params}}
+</div>
+<h4 id="response">Success</h4>
+<div class="success">
+{{api.success}}
+</div>
+<h4 id="response">Error</h4>
+<div class="error">
+{{api.error}}
+</div>
+<h4 id="response">Example</h4>
+<div class="example">
+{{api.example}}
+</div>
+{#% for key, value in api.items() %#}
+{#  {{key}} = {{value}} <br>#}
+{#% endfor %#}
 <p>
-Short Name: {{api.shortname}}
-Group Name: {{api.apigroup}}
-Description: {{api.apigroup}}
-<a href="/updateAPI?apiid={{api.id}}">update</a>
-<a href="/deleteAPI?apiid={{api.id}}">deltet</a>
+<a class="button" href="/updateAPI?apiid={{api.id}}">update</a>
+<a class="button" href="/deleteAPI?apiid={{api.id}}">deltet</a>
 </p>
 <p>
 
 </p>
-{% endblock listapi %} 
+{% endblock %} 

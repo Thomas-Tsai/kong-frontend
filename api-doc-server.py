@@ -6,15 +6,15 @@ from flask import render_template
 from flask import request
 from flask import Flask, g
 from flask import Flask, redirect, url_for
-from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, validators
+from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, SelectField, validators
 
 app = Flask(__name__)
 
 SQLITE_DB_PATH = 'apidoc.db'
 APIList = []
 # The Endpoint of base URL
-#kongurl = "http://10.12.0.10:8001"
-kongurl = "http://172.17.0.3:8001"
+kongurl = "http://10.12.0.6:8001"
+#kongurl = "http://172.17.0.3:8001"
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -35,7 +35,7 @@ class apiForm(Form):
     version = StringField('Version', [validators.Length(min=1, max=64)])
     name = StringField('name', [validators.Length(min=1, max=64)])
     shortname = StringField('short name', [validators.Length(min=1, max=64)])
-    method = StringField('method', [validators.Length(min=1, max=64)])
+    method = SelectField(u'method', choices=[('',''),('GET', 'GET'), ('POST', 'POST'),('DELETE', 'DELETE'), ('PATCH', 'PATCH'), ('PUT','PUT')])
     uri = StringField('uri', [validators.Length(min=1, max=64)])
     host = StringField('host', [validators.Length(min=1, max=64)])
     group = StringField('Group', [validators.Length(min=1, max=64)])
@@ -122,9 +122,10 @@ def updateAPI():
         apidata = runApi(kongurl+'/apis/'+apiId)
         db = get_db()
         db.row_factory = dict_factory
-        cursor = db.execute("""select shortname, desc, params, apigroup, example, success, error from apis where apiid=?;""" , (apiId,))
+        cursor = db.execute("""select shortname, version, desc, params, apigroup, example, success, error from apis where apiid=?;""" , (apiId,))
         for row in cursor:
             apidata['shortname'] = row['shortname']
+            apidata['version'] = row['version']
             apidata['desc'] = row['desc']
             apidata['params'] = row['params']
             apidata['apigroup'] = row['apigroup']
@@ -135,11 +136,12 @@ def updateAPI():
         form.version.data = ''
         form.name.data = apidata['name']
         form.shortname.data = apidata['shortname']
-        #form.method.data = apidata['method']
+        form.method.data = apidata['methods'][0]
         form.uri.data = apidata['uris'][0]
         form.host.data = apidata['hosts'][0]
         form.group.data = apidata['apigroup']
         form.description.data = apidata['desc']
+        form.version.data = apidata['version']
         form.params.data = apidata['params']
         form.example.data = apidata['example']
         form.success.data = apidata['success']
@@ -152,22 +154,31 @@ def saveAPI():
     if request.method == 'POST' and form.validate():
         apiid = form.apiid.data
         updateApiUrl = kongurl+"/apis/"+apiid
-        upstreamUrl = "http://"+form.host.data+"/"+form.uri.data
-        updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data}
+        upstreamUrl = "http://"+form.host.data+""+form.uri.data
+        updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(updateApiUrl, 'patch', updateApiData)
         shortName = form.shortname.data
         apiDesc = form.description.data
+        apiVersion = form.version.data
         apiGroup = form.group.data
+        apiParams = form.params.data
+        apiExample = form.example.data
+        apiSuccess = form.success.data
+        apiError = form.error.data
         db = get_db()
-        db.execute("""update apis set shortname=?, desc=?, apigroup=? where apiid=?""" , (shortName, apiDesc, apiGroup, apiid))
+        db.execute("""update apis set shortname=?, desc=?, version=?, apigroup=?, params=?, example=?, success=?, error=? where apiid=?""" , (shortName, apiDesc, apiVersion, apiGroup, apiParams, apiExample, apiSuccess, apiError, apiid))
         db.commit()
         return redirect(url_for('index'))
+    return render_template('updateAPI.html', form=form)
     
 @app.route("/deleteAPI")
 def deleteAPI():
     if request.method == 'GET':
         apiId = request.args.get('apiid')
         apidata = runApi(kongurl+'/apis/'+apiId, 'delete')
+        db = get_db()
+        db.execute("""delete from apis where apiid=?""" , (apiId,))
+        db.commit()
     return redirect(url_for('index'))
 
 @app.route("/api")
@@ -178,11 +189,12 @@ def displayAPI():
         apidata = runApi(kongurl+'/apis/'+apiId)
         db = get_db()
         db.row_factory = dict_factory
-        cursor = db.execute("""select shortname, desc, params, apigroup, example, success, error from apis where apiid=?;""" , (apiId,))
+        cursor = db.execute("""select shortname, desc, params, version, apigroup, example, success, error from apis where apiid=?;""" , (apiId,))
         for row in cursor:
             apidata['shortname'] = row['shortname']
             apidata['desc'] = row['desc']
             apidata['params'] = row['params']
+            apidata['version'] = row['version']
             apidata['apigroup'] = row['apigroup']
             apidata['example'] = row['example']
             apidata['success'] = row['success']
@@ -197,19 +209,21 @@ def displayAPI():
 def addAPI():
     form = apiForm(request.form)
     if request.method == 'POST' and form.validate():
-        #print("form data: %s", form.version.data)
         addApiUrl = kongurl+"/apis"
         upstreamUrl = "http://"+form.host.data+"/"+form.uri.data
-        addApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data}
+        addApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(addApiUrl, 'post', addApiData)
-        print("API ADDED %s", api)
         apiID = api['id']
-        #apiName = api['name']
-        shortName = request.form.get('shortname', "")
-        apiDesc = request.form.get('desccription', "")
-        apiGroup = request.form.get('group', "")
+        shortName = form.shortname.data
+        apiDesc = form.description.data
+        apiGroup = form.group.data
+        apiParams = form.params.data
+        apiVersion = form.version.data
+        apiExample = form.example.data
+        apiSuccess = form.success.data
+        apiError = form.error.data
         db = get_db()
-        db.execute("""insert into apis(shortname, desc, apiid, apigroup) values (?,?,?,?);""" , (shortName, apiDesc, apiID, apiGroup))
+        db.execute("""insert into apis(shortname, desc, apiid, apigroup, version, params, example, success, error) values (?,?,?,?,?,?,?,?,?);""" , (shortName, apiDesc, apiID, apiGroup, apiVersion, apiParams, apiExample, apiSuccess, apiError))
         db.commit()
         return redirect(url_for('index'))
     
