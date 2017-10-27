@@ -5,9 +5,9 @@ A python flask version of kong frontend
 
 ## Prepare python virtual environment and install modules
 
-    python3 -m env myenv
-    source myenv/bin/active
-    pip3 install -r < requirements.txt
+    python3 -m venv kong-env
+    source kong-env/bin/active
+    pip3 install -r  requirements.txt
   
 ## before you run
 
