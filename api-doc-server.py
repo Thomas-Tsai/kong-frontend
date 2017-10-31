@@ -155,6 +155,7 @@ def saveAPI():
         apiid = form.apiid.data
         updateApiUrl = kongurl+"/apis/"+apiid
         upstreamUrl = "http://"+form.host.data+""+form.uri.data
+	upstreamUrl = upstreamUrl.replace("\/\/", "\/")
         updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(updateApiUrl, 'patch', updateApiData)
         shortName = form.shortname.data

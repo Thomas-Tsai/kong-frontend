@@ -3,12 +3,10 @@
 <p> </p>
 <div><a class="button" href="/addAPI">Add API</a></div>
 {% for api in  api_list%}
-<p><ul>
-      <li>API NAME: <a href="/displayAPI?apiid={{api.apiid}}">{{api.name}}</a>
-      <li>Short Name: {{api.shortname}}
-      <li>Group Name: {{api.apigroup}}
-      <li>Description: {{api.apigroup}}
-</ul></p>
+<p>
+<h3><a href="/displayAPI?apiid={{api.apiid}}">{{api.name}} ({{api.shortname}})</a>:
+<p>{{api.apigroup}}</p>
+</p>
       <div>
       <a class="button" href="/updateAPI?apiid={{api.apiid}}">update</a> 
       <a class="button" href="/deleteAPI?apiid={{api.apiid}}">deltet</a>
