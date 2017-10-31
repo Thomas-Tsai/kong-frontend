@@ -1,6 +1,7 @@
 import sqlite3
 import requests
 import json
+import markdown
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -13,7 +14,7 @@ app = Flask(__name__)
 SQLITE_DB_PATH = 'apidoc.db'
 APIList = []
 # The Endpoint of base URL
-kongurl = "http://10.12.0.6:8001"
+kongurl = "http://10.12.0.10:8001"
 #kongurl = "http://172.17.0.3:8001"
 
 def get_db():
@@ -194,13 +195,13 @@ def displayAPI():
         for row in cursor:
             apidata['shortname'] = row['shortname']
             apidata['desc'] = row['desc']
-            apidata['params'] = row['params']
+            apidata['params'] = markdown.markdown(row['params'])
             apidata['version'] = row['version']
             apidata['apigroup'] = row['apigroup']
-            apidata['example'] = row['example']
-            apidata['success'] = row['success']
-            apidata['error'] = row['error']
-        
+            apidata['example'] = markdown.markdown(row['example'],output_format='html5')
+            apidata['success'] = markdown.markdown(row['success'])
+            apidata['error'] = markdown.markdown(row['error'])
+
         return render_template(
             'displayAPI.html', api = apidata
             )
