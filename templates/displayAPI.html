@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<script src="{{  url_for('static', filename='markdown.js') }}"></script>
 <h3>{{api.name}}</h3>
 <h4>{{api.shortname}} (V: {{api.version}})</h4>
 <h4>{{api.desc}}</h4>
@@ -9,19 +10,19 @@
 <div class="endpoint {{api.methods[0].lower()}}">{{api.uris[0]}}</div>
 <h4 id="request-body">Request Body</h4>
 <div class="params">
-{{api.params}}
+{{ api.params|safe }}
 </div>
 <h4 id="response">Success</h4>
 <div class="success">
-{{api.success}}
+{{api.success|safe }}
 </div>
 <h4 id="response">Error</h4>
 <div class="error">
-{{api.error}}
+{{api.error|safe }}
 </div>
 <h4 id="response">Example</h4>
 <div class="example">
-{{api.example}}
+{{api.example|safe }}
 </div>
 {#% for key, value in api.items() %#}
 {#  {{key}} = {{value}} <br>#}

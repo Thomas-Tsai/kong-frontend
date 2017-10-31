@@ -2331,7 +2331,42 @@ nav a.active,nav a:active {
 	display:block;
 	background-color:#fafafa;
 	border:1px solid #ebebeb
-}.content .endpoint {
+}
+.content .params {
+	line-height:41px;
+	margin-bottom:1em;
+	font-size:14px;
+	border-radius:3px;
+	display:block;
+	background-color:#fafafa;
+	border:1px solid #ebebeb
+}
+.content .successul {
+	line-height:41px;
+	margin-bottom:1em;
+	font-size:14px;
+	border-radius:3px;
+	display:block;
+	background-color:#fafafa;
+	border:1px solid #ebebeb
+}.content .error {
+	line-height:41px;
+	margin-bottom:1em;
+	font-size:14px;
+	border-radius:3px;
+	display:block;
+	background-color:#fafafa;
+	border:1px solid #ebebeb
+}.content .example {
+	line-height:41px;
+	margin-bottom:1em;
+	font-size:14px;
+	border-radius:3px;
+	display:block;
+	background-color:#fafafa;
+	border:1px solid #ebebeb
+}
+.content .endpoint {
 	line-height:41px;
 	margin-bottom:1em;
 	font-size:14px;
