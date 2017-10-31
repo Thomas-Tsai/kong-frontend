@@ -5,7 +5,7 @@
 {% for api in  api_list%}
 <p>
 <h3><a href="/displayAPI?apiid={{api.apiid}}">{{api.name}} ({{api.shortname}})</a>:
-<p>{{api.apigroup}}</p>
+<p>{{api.apidesc}}</p>
 </p>
       <div>
       <a class="button" href="/updateAPI?apiid={{api.apiid}}">update</a> 

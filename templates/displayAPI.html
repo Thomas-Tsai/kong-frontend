@@ -2,12 +2,14 @@
 {% block content %}
 <script src="{{  url_for('static', filename='markdown.js') }}"></script>
 <h3>{{api.name}}</h3>
-<h4>{{api.shortname}} (V: {{api.version}})</h4>
+<h4>{{api.shortname}} (版本: {{api.version}})</h4>
 <h4>{{api.desc}}</h4>
 <h4>Host</h4>
 <div class="host">{{api.hosts[0]}}</div>
 <h4>Endpoint</h4>
 <div class="endpoint {{api.methods[0].lower()}}">{{api.uris[0]}}</div>
+<h4>KONG URI</h4>
+<div class="endpoint">curl -H "Host: {{api.hosts[0]}}" {{kongapiurl}}{{api.uris[0]}}</div>
 <h4 id="request-body">Request Body</h4>
 <div class="params">
 {{ api.params|safe }}
@@ -22,7 +24,13 @@
 </div>
 <h4 id="response">Example</h4>
 <div class="example">
+<div class="highlight">
+<pre>
+<code>
 {{api.example|safe }}
+</code>
+</pre>
+</div>
 </div>
 {#% for key, value in api.items() %#}
 {#  {{key}} = {{value}} <br>#}

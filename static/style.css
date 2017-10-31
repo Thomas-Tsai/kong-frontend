@@ -2341,7 +2341,7 @@ nav a.active,nav a:active {
 	background-color:#fafafa;
 	border:1px solid #ebebeb
 }
-.content .successul {
+.content .success {
 	line-height:41px;
 	margin-bottom:1em;
 	font-size:14px;
@@ -2358,13 +2358,13 @@ nav a.active,nav a:active {
 	background-color:#fafafa;
 	border:1px solid #ebebeb
 }.content .example {
-	line-height:41px;
-	margin-bottom:1em;
+	#line-height:41px;
+	#margin-bottom:1em;
 	font-size:14px;
-	border-radius:3px;
-	display:block;
-	background-color:#fafafa;
-	border:1px solid #ebebeb
+	#border-radius:3px;
+	#display:block;
+	#background-color:#fafafa;
+	#border:1px solid #ebebeb
 }
 .content .endpoint {
 	line-height:41px;

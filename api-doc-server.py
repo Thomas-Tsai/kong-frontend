@@ -14,7 +14,11 @@ app = Flask(__name__)
 SQLITE_DB_PATH = 'apidoc.db'
 APIList = []
 # The Endpoint of base URL
-kongurl = "http://10.12.0.10:8001"
+kong_admin_port = "8001"
+kong_api_port = "8000"
+kong_base_url = "http://10.12.0.6"
+kongurl = kong_base_url+":"+kong_admin_port
+kongapiurl = kong_base_url+":"+kong_api_port
 #kongurl = "http://172.17.0.3:8001"
 
 def get_db():
@@ -40,11 +44,11 @@ class apiForm(Form):
     uri = StringField('uri', [validators.Length(min=1, max=64)])
     host = StringField('host', [validators.Length(min=1, max=64)])
     group = StringField('Group', [validators.Length(min=1, max=64)])
-    description = TextAreaField('Description', [validators.optional(), validators.length(max=2048)])
+    description = TextAreaField('Description', [validators.optional(), validators.length(max=8192)])
     params = TextAreaField('Params', [validators.optional(), validators.length(max=2048)])
-    example = TextAreaField('Example', [validators.optional(), validators.length(max=2048)])
-    success = TextAreaField('Success', [validators.optional(), validators.length(max=2048)])
-    error = TextAreaField('Error', [validators.optional(), validators.length(max=2048)])
+    example = TextAreaField('Example', [validators.optional(), validators.length(max=8192)])
+    success = TextAreaField('Success', [validators.optional(), validators.length(max=8192)])
+    error = TextAreaField('Error', [validators.optional(), validators.length(max=8192)])
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -92,6 +96,7 @@ def runApi(url, method='get', data=''):
 
 @app.route('/')
 @app.route("/index")
+@app.route("/login")
 def index():
     listurl = kongurl + "/apis"
     kongData = runApi(listurl)
@@ -155,8 +160,9 @@ def saveAPI():
     if request.method == 'POST' and form.validate():
         apiid = form.apiid.data
         updateApiUrl = kongurl+"/apis/"+apiid
-        upstreamUrl = "http://"+form.host.data+""+form.uri.data
-	upstreamUrl = upstreamUrl.replace("\/\/", "\/")
+        upstreamUrl = form.host.data+""+form.uri.data
+        upstreamUrl = upstreamUrl.replace('//', '/')
+        upstreamUrl = "http://"+upstreamUrl
         updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(updateApiUrl, 'patch', updateApiData)
         shortName = form.shortname.data
@@ -198,12 +204,12 @@ def displayAPI():
             apidata['params'] = markdown.markdown(row['params'])
             apidata['version'] = row['version']
             apidata['apigroup'] = row['apigroup']
-            apidata['example'] = markdown.markdown(row['example'],output_format='html5')
-            apidata['success'] = markdown.markdown(row['success'])
-            apidata['error'] = markdown.markdown(row['error'])
+            apidata['example'] = row['example']
+            apidata['success'] = row['success']
+            apidata['error'] = row['error']
 
         return render_template(
-            'displayAPI.html', api = apidata
+            'displayAPI.html', api = apidata, kongapiurl=kongapiurl
             )
     return redirect(url_for('index'))
 
@@ -212,7 +218,9 @@ def addAPI():
     form = apiForm(request.form)
     if request.method == 'POST' and form.validate():
         addApiUrl = kongurl+"/apis"
-        upstreamUrl = "http://"+form.host.data+"/"+form.uri.data
+        upstreamUrl = form.host.data+""+form.uri.data
+        upstreamUrl = upstreamUrl.replace('//', '/')
+        upstreamUrl = "http://"+upstreamUrl
         addApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(addApiUrl, 'post', addApiData)
         apiID = api['id']
