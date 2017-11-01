@@ -16,7 +16,7 @@ APIList = []
 # The Endpoint of base URL
 kong_admin_port = "8001"
 kong_api_port = "8000"
-kong_base_url = "http://10.12.0.6"
+kong_base_url = "http://kong.nchc.org.tw"
 kongurl = kong_base_url+":"+kong_admin_port
 kongapiurl = kong_base_url+":"+kong_api_port
 #kongurl = "http://172.17.0.3:8001"
