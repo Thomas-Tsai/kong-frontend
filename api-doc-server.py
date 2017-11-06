@@ -1,4 +1,5 @@
-import sqlite3
+#!/bin/python 
+# -*- coding: utf-8 -*- 
 import requests
 import json
 import markdown
@@ -8,26 +9,23 @@ from flask import request
 from flask import Flask, g
 from flask import Flask, redirect, url_for
 from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, SelectField, validators
+import apidb
 
 app = Flask(__name__)
 
-SQLITE_DB_PATH = 'apidoc.db'
 APIList = []
+
 # The Endpoint of base URL
 kong_admin_port = "8001"
 kong_api_port = "8000"
-kong_base_url = "http://kong.nchc.org.tw"
+#kong_base_url = "http://kong.nchc.org.tw"
+kong_base_url = "http://127.0.0.1"
 kongurl = kong_base_url+":"+kong_admin_port
 kongapiurl = kong_base_url+":"+kong_api_port
-#kongurl = "http://172.17.0.3:8001"
 
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(SQLITE_DB_PATH)
-        # Enable foreign key check
-        db.execute("PRAGMA foreign_keys = ON")
-    return db
+    idb = apidb.apidb()
+    return idb
 
 def dict_factory(cursor, row):
     d = {}
@@ -110,10 +108,10 @@ def index():
         apiShortName=''
         apiDesc=''
         apiGroup=''
-        cursor = db.execute("""select shortname, desc, apigroup from apis where apiid=?;""" , (apiID,))
-        for row in cursor:
+        apirows = db.get_apis(apiID)
+        for row in apirows:
             apiShortName = row['shortname']
-            apiDesc = row['desc']
+            apiDesc = row['description']
             apiGroup = row['apigroup']
         
         apiListData = {'name':apiName, 'kongid':apiID, 'shortname':apiShortName, 'apidesc':apiDesc, 'apigroup':apiGroup, 'apiid':apiID}
@@ -128,11 +126,19 @@ def updateAPI():
         apidata = runApi(kongurl+'/apis/'+apiId)
         db = get_db()
         db.row_factory = dict_factory
-        cursor = db.execute("""select shortname, version, desc, params, apigroup, example, success, error from apis where apiid=?;""" , (apiId,))
-        for row in cursor:
+        rows = db.get_api(apiId)
+        apidata['shortname'] = ''
+        apidata['version'] = ''
+        apidata['desc'] = ''
+        apidata['params'] = ''
+        apidata['apigroup'] = ''
+        apidata['example'] = ''
+        apidata['success'] = ''
+        apidata['error'] = ''
+        for row in rows:
             apidata['shortname'] = row['shortname']
             apidata['version'] = row['version']
-            apidata['desc'] = row['desc']
+            apidata['desc'] = row['description']
             apidata['params'] = row['params']
             apidata['apigroup'] = row['apigroup']
             apidata['example'] = row['example']
@@ -165,17 +171,18 @@ def saveAPI():
         upstreamUrl = "http://"+upstreamUrl
         updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(updateApiUrl, 'patch', updateApiData)
-        shortName = form.shortname.data
-        apiDesc = form.description.data
-        apiVersion = form.version.data
-        apiGroup = form.group.data
-        apiParams = form.params.data
-        apiExample = form.example.data
-        apiSuccess = form.success.data
-        apiError = form.error.data
+        apidata={}
+        apidata['shortName'] = form.shortname.data
+        apidata['Desc'] = form.description.data
+        apidata['Version'] = form.version.data
+        apidata['Group'] = form.group.data
+        apidata['Params'] = form.params.data
+        apidata['Example'] = form.example.data
+        apidata['Success'] = form.success.data
+        apidata['Error'] = form.error.data
+        apidata['apiid'] = apiid
         db = get_db()
-        db.execute("""update apis set shortname=?, desc=?, version=?, apigroup=?, params=?, example=?, success=?, error=? where apiid=?""" , (shortName, apiDesc, apiVersion, apiGroup, apiParams, apiExample, apiSuccess, apiError, apiid))
-        db.commit()
+        db.update_api(apidata)
         return redirect(url_for('index'))
     return render_template('updateAPI.html', form=form)
     
@@ -197,10 +204,18 @@ def displayAPI():
         apidata = runApi(kongurl+'/apis/'+apiId)
         db = get_db()
         db.row_factory = dict_factory
-        cursor = db.execute("""select shortname, desc, params, version, apigroup, example, success, error from apis where apiid=?;""" , (apiId,))
-        for row in cursor:
+        rows = db.get_api(apiId)
+        apidata['shortname'] = ''
+        apidata['desc'] =  ''
+        apidata['params'] =  ''
+        apidata['version'] = ''
+        apidata['apigroup'] = ''
+        apidata['example'] =  ''
+        apidata['success'] = ''
+        apidata['error'] = ''
+        for row in rows:
             apidata['shortname'] = row['shortname']
-            apidata['desc'] = row['desc']
+            apidata['desc'] = row['description']
             apidata['params'] = markdown.markdown(row['params'])
             apidata['version'] = row['version']
             apidata['apigroup'] = row['apigroup']
@@ -224,17 +239,18 @@ def addAPI():
         addApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
         api = runApi(addApiUrl, 'post', addApiData)
         apiID = api['id']
-        shortName = form.shortname.data
-        apiDesc = form.description.data
-        apiGroup = form.group.data
-        apiParams = form.params.data
-        apiVersion = form.version.data
-        apiExample = form.example.data
-        apiSuccess = form.success.data
-        apiError = form.error.data
+        apidata={}
+        apidata['shortName'] = form.shortname.data
+        apidata['Desc'] = form.description.data
+        apidata['Group'] = form.group.data
+        apidata['Params'] = form.params.data
+        apidata['Version'] = form.version.data
+        apidata['Example'] = form.example.data
+        apidata['Success'] = form.success.data
+        apidata['Error'] = form.error.data
+        apidata['apiid'] = apiID
         db = get_db()
-        db.execute("""insert into apis(shortname, desc, apiid, apigroup, version, params, example, success, error) values (?,?,?,?,?,?,?,?,?);""" , (shortName, apiDesc, apiID, apiGroup, apiVersion, apiParams, apiExample, apiSuccess, apiError))
-        db.commit()
+        db.add_api(apidata)
         return redirect(url_for('index'))
     
     return render_template('addAPI.html', form=form)
