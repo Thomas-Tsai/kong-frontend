@@ -118,12 +118,21 @@ def index():
         APIList.append(apiListData)
     return render_template('index.html', api_list = APIList)
 
+@app.route("/kong")
+def kong():
+
+    apidata = runApi(kongurl+'/')
+    kongstr = json.dumps(apidata, indent=4)
+    return render_template('kong.html', kong = kongstr)
+
 @app.route("/updateAPI")
 def updateAPI():
     form = apiForm(request.form)
     if request.method == 'GET':
         apiId = request.args.get('apiid')
         apidata = runApi(kongurl+'/apis/'+apiId)
+        if 'methods' not in apidata: apidata['methods'] = ['GET']
+        if 'uris' not in apidata: apidata['uris'] = ['']
         db = get_db()
         db.row_factory = dict_factory
         rows = db.get_api(apiId)
@@ -192,8 +201,7 @@ def deleteAPI():
         apiId = request.args.get('apiid')
         apidata = runApi(kongurl+'/apis/'+apiId, 'delete')
         db = get_db()
-        db.execute("""delete from apis where apiid=?""" , (apiId,))
-        db.commit()
+        db.delete_api(apiId)
     return redirect(url_for('index'))
 
 @app.route("/api")
@@ -202,6 +210,8 @@ def displayAPI():
     if request.method == 'GET':
         apiId = request.args.get('apiid', '000')
         apidata = runApi(kongurl+'/apis/'+apiId)
+        if 'methods' not in apidata: apidata['methods'] = ['GET']
+        if 'uris' not in apidata: apidata['uris'] = ['']
         db = get_db()
         db.row_factory = dict_factory
         rows = db.get_api(apiId)

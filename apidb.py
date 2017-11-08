@@ -13,10 +13,20 @@ class apidb():
 
         try:
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (db, user, server, password))
+            self.cur = self.conn.cursor(cursor_factory = psycopg2.extras.DictCursor)
         except:
             print("connect db error")
-        self.cur = self.conn.cursor(cursor_factory = psycopg2.extras.DictCursor)
 
+    def get_group(self):
+        rows = []
+        try:
+            sql = "select id, name from group"
+            print(sql)
+            self.cur.execute(sql)
+            rows = self.cur.fetchall()
+        except:
+            print("select group error")
+        return rows
     def get_api(self, apiid):
         apis = []
         rows=[]
@@ -70,10 +80,10 @@ class apidb():
         except:
             print("update error "+api['apiid'])
 
-    def remove_api(self, api):
+    def delete_api(self, apiid):
         try:
-            self.cur.execute("""delete from apis where apiid=?""" , (apiId,))
+            self.cur.execute("""delete from apis where apiid=?""" , (apiid,))
             self.conn.commit()
         except:
-            print("remove error")
+            print("delete api "+apiid+"error")
 
