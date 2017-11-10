@@ -2,14 +2,22 @@
 # -*- coding: utf-8 -*-
 import psycopg2
 import psycopg2.extras
+import configparser
 
 class apidb():
-    def __init__(self):
+    def __init__(self, config_file):
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        print(config.sections())
+
         self.conn = 0
-        db = 'apis'
-        user = 'thomas'
-        server = '127.0.0.1'
-        password = 'kongkong'
+        db = config['db']['database']
+        user = config['db']['user']
+        server = config['db']['host']
+        password = config['db']['password']
 
         try:
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (db, user, server, password))

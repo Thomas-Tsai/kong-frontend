@@ -9,22 +9,16 @@ from flask import request
 from flask import Flask, g
 from flask import Flask, redirect, url_for
 from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, SelectField, validators
+import os.path
+import sys
+import configparser
 import apidb
 
 app = Flask(__name__)
-
 APIList = []
 
-# The Endpoint of base URL
-kong_admin_port = "8001"
-kong_api_port = "8000"
-#kong_base_url = "http://kong.nchc.org.tw"
-kong_base_url = "http://127.0.0.1"
-kongurl = kong_base_url+":"+kong_admin_port
-kongapiurl = kong_base_url+":"+kong_api_port
-
 def get_db():
-    idb = apidb.apidb()
+    idb = apidb.apidb(config_file)
     return idb
 
 def dict_factory(cursor, row):
@@ -266,5 +260,30 @@ def addAPI():
     return render_template('addAPI.html', form=form)
 
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0')
 
+    if len(sys.argv) == 2:
+        config_file = sys.argv[1]
+    else:
+        my_path = os.path.abspath(sys.argv[0])
+        my_dir = os.path.dirname(my_path)
+        config_file = my_dir+'/config.ini'
+    
+    print("load config file "+config_file)
+    
+    if os.path.isfile(config_file) == True:
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        if 'kong' not in config or 'db' not in config:
+            print(config.sections())
+            print("config file "+config_file+" error\n")
+    else:
+        print("config file "+config_file+" not found\n")
+        sys.exit(0)
+    
+    # The Endpoint of base URL
+    kong_admin_port = config['kong']['admin_port']
+    kong_api_port = config['kong']['api_port']
+    kong_base_url = config['kong']['host']
+    kongurl = kong_base_url+":"+kong_admin_port
+    kongapiurl = kong_base_url+":"+kong_api_port
+    app.run(debug=True,host='0.0.0.0',port=7788)

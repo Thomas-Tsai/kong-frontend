@@ -1,0 +1,11 @@
+[db]
+database=apis
+user=thomas
+password=kongkong
+host=127.0.0.1
+
+[kong]
+host=http://140.110.240.65
+api_port=8000
+admin_port=8001
+ssl=false
