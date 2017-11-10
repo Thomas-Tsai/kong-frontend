@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<p> </p>
+<div><a class="button" href="/addAPI">Add API</a></div>
+{% for api in  api_list%}
+<p>
+<h2>{{ api.groupname }}:</h2>
+<h3><a href="/displayAPI?apiid={{api.apiid}}">{{api.name}} ({{api.shortname}})</a>:
+<p>{{api.apidesc}}</p>
+</p>
+      <div>
+      <a class="button" href="/updateAPI?apiid={{api.apiid}}">update</a> 
+      <a class="button" href="/deleteAPI?apiid={{api.apiid}}">delete</a>
+      </div>
+<hr>
+{% endfor %}
+<div><a class="button" href="/addAPI">Add API</a></div>
+<p> </p>
+{% endblock %} 

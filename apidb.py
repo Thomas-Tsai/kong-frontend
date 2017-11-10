@@ -25,16 +25,40 @@ class apidb():
         except:
             print("connect db error")
 
+    def name_of_group(self, gid):
+        rows = []
+        name = ""
+        try:
+            sql = "select name from apigroup where id='{0}'".format(gid)
+            print(sql)
+            self.cur.execute(sql)
+            rows = self.cur.fetchall()
+        except:
+            print("select group name error")
+        name = rows[0]['name']
+        return name
     def get_group(self):
         rows = []
         try:
-            sql = "select id, name from group"
+            sql = "select id, name from apigroup"
             print(sql)
             self.cur.execute(sql)
             rows = self.cur.fetchall()
         except:
             print("select group error")
         return rows
+    def get_group_apis(self, gid):
+        apis = []
+        rows=[]
+        try:
+            sql = "select shortname, description, apiid, apigroup from apis where apigroup='{0}'".format(gid)
+            print(sql)
+            self.cur.execute(sql)
+            rows = self.cur.fetchall()
+        except:
+            print("select api from group "+gid+" error")
+        return rows
+
     def get_api(self, apiid):
         apis = []
         rows=[]
@@ -68,7 +92,7 @@ class apidb():
             print("api exist?!")
         else:
             try:
-                sql = "insert into apis(id, shortname, description, apiid, apigroup, version, params, example, success, error) values ('{2}', '{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}')".format(api['shortName'], api['Desc'], api['apiid'], api['Group'], api['Version'], api['Params'], api['Example'], api['Success'], api['Error'])
+                sql = "insert into apis(id, shortname, description, apiid, apigroup, version, params, example, success, error, uid) values ('{2}', '{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', {9})".format(api['shortName'], api['Desc'], api['apiid'], api['Group'], api['Version'], api['Params'], api['Example'], api['Success'], api['Error'], api['uid'])
                 print(sql)
                 self.cur.execute(sql)
                 self.conn.commit()
@@ -90,8 +114,9 @@ class apidb():
 
     def delete_api(self, apiid):
         try:
-            self.cur.execute("""delete from apis where apiid=?""" , (apiid,))
+            sql = "delete from apis where apiid like '{0}'".format(apiid)
+            self.cur.execute(sql)
             self.conn.commit()
         except:
-            print("delete api "+apiid+"error")
+            print("delete api "+apiid+" error")
 

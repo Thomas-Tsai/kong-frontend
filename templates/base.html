@@ -77,11 +77,9 @@
 <div class="container-fluid text-center">    
   <div class="row content">
     <div class="col-sm-2 sidenav">
-      <p><a href="#">資料集</a></p>
-      <p><a href="#">運算</a></p>
-      <p><a href="#">儲存</a></p>
-      <p><a href="#">映像</a></p>
-      <p><a href="#">全</a></p>
+      {% for g_id, g_name in groups.items() %}
+      <p><a href="/group?groupid={{ g_id }}">{{ g_name }}</a></p>
+      {% endfor %}
     </div>
     <div class="col-sm-8 text-left"> 
     {% block content %}{% endblock content %}

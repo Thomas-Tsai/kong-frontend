@@ -8,6 +8,7 @@ from flask import render_template
 from flask import request
 from flask import Flask, g
 from flask import Flask, redirect, url_for
+from flask import session
 from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, SelectField, validators
 import os.path
 import sys
@@ -15,6 +16,7 @@ import configparser
 import apidb
 
 app = Flask(__name__)
+app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 APIList = []
 
 def get_db():
@@ -28,6 +30,7 @@ def dict_factory(cursor, row):
     return d
 
 class apiForm(Form):
+
     apiid = HiddenField('apiid')
     version = StringField('Version', [validators.Length(min=1, max=64)])
     name = StringField('name', [validators.Length(min=1, max=64)])
@@ -35,7 +38,7 @@ class apiForm(Form):
     method = SelectField(u'method', choices=[('',''),('GET', 'GET'), ('POST', 'POST'),('DELETE', 'DELETE'), ('PATCH', 'PATCH'), ('PUT','PUT')])
     uri = StringField('uri', [validators.Length(min=1, max=64)])
     host = StringField('host', [validators.Length(min=1, max=64)])
-    group = StringField('Group', [validators.Length(min=1, max=64)])
+    group = SelectField(u'Servic/Group', choices=[('','0')])
     description = TextAreaField('Description', [validators.optional(), validators.length(max=8192)])
     params = TextAreaField('Params', [validators.optional(), validators.length(max=2048)])
     example = TextAreaField('Example', [validators.optional(), validators.length(max=8192)])
@@ -86,9 +89,24 @@ def runApi(url, method='get', data=''):
 
     return jData
 
+
+@app.context_processor
+def inject_data():
+    session['uid'] = '1'
+    groups = {}
+    db = get_db()
+    get_group = db.get_group()
+    
+    for group in get_group:
+        name = group['name']
+        id = group['id']
+        groups[id]=name
+    return dict(groups=groups)
+
 @app.route('/')
-@app.route("/index")
+@app.route('/index')
 @app.route("/login")
+@app.route("/all")
 def index():
     listurl = kongurl + "/apis"
     kongData = runApi(listurl)
@@ -112,6 +130,31 @@ def index():
         APIList.append(apiListData)
     return render_template('index.html', api_list = APIList)
 
+
+@app.route("/group", methods=['GET','POST'])
+def group():
+    
+    listurl = kongurl + "/apis"
+    groupid = request.args.get('groupid')
+    if groupid == '':
+        groupid='0'
+    
+    APIList=[]
+    db = get_db()
+    apis_in_group = db.get_group_apis(groupid)
+    for api in apis_in_group:
+        apiid = api['apiid']
+        kongData = runApi(listurl+"/"+apiid)
+        apiName = kongData['name']
+        apiShortName = api['shortname']
+        apiDesc = api['description']
+        apiGroup = api['apigroup']
+        groupName = db.name_of_group(apiGroup)
+        apiListData = {'name':apiName, 'shortname':apiShortName, 'apidesc':apiDesc, 'apigroup':apiGroup, 'apiid':apiid, 'groupname':groupName}
+        APIList.append(apiListData)
+        
+    return render_template('group.html', api_list = APIList)
+
 @app.route("/kong")
 def kong():
 
@@ -121,13 +164,22 @@ def kong():
 
 @app.route("/updateAPI")
 def updateAPI():
+    db = get_db()
     form = apiForm(request.form)
+    groups = []
+    group_row = db.get_group()
+    for g in group_row:
+        gdata={}
+        gdata['id'] = g['id']
+        gdata['name'] = g['name'].replace(" ", "")
+        groups.append(gdata)
+    form.group.choices = [(str(g['id']), str(g['name'])) for g in groups]
+
     if request.method == 'GET':
         apiId = request.args.get('apiid')
         apidata = runApi(kongurl+'/apis/'+apiId)
         if 'methods' not in apidata: apidata['methods'] = ['GET']
         if 'uris' not in apidata: apidata['uris'] = ['']
-        db = get_db()
         db.row_factory = dict_factory
         rows = db.get_api(apiId)
         apidata['shortname'] = ''
@@ -147,6 +199,7 @@ def updateAPI():
             apidata['example'] = row['example']
             apidata['success'] = row['success']
             apidata['error'] = row['error']
+            apidata['uid'] = session.get('uid', 'uid error')
         form.apiid.data = apiId
         form.version.data = ''
         form.name.data = apidata['name']
@@ -165,7 +218,17 @@ def updateAPI():
 
 @app.route("/saveAPI", methods=['POST'])
 def saveAPI():
+    db = get_db()
     form = apiForm(request.form)
+    groups = []
+    group_row = db.get_group()
+    for g in group_row:
+        gdata={}
+        gdata['id'] = g['id']
+        gdata['name'] = g['name'].replace(" ", "")
+        groups.append(gdata)
+    form.group.choices = [(str(g['id']), str(g['name'])) for g in groups]
+
     if request.method == 'POST' and form.validate():
         apiid = form.apiid.data
         updateApiUrl = kongurl+"/apis/"+apiid
@@ -184,9 +247,10 @@ def saveAPI():
         apidata['Success'] = form.success.data
         apidata['Error'] = form.error.data
         apidata['apiid'] = apiid
+        apidata['uid'] = session.get('uid', 'uid error')
         db = get_db()
         db.update_api(apidata)
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
     return render_template('updateAPI.html', form=form)
     
 @app.route("/deleteAPI")
@@ -226,6 +290,7 @@ def displayAPI():
             apidata['example'] = row['example']
             apidata['success'] = row['success']
             apidata['error'] = row['error']
+            apidata['uid'] = session.get('uid', 'uid error')
 
         return render_template(
             'displayAPI.html', api = apidata, kongapiurl=kongapiurl
@@ -234,7 +299,18 @@ def displayAPI():
 
 @app.route('/addAPI', methods=['GET', 'POST'])
 def addAPI():
+    db = get_db()
     form = apiForm(request.form)
+
+    groups = []
+    group_row = db.get_group()
+    for g in group_row:
+        gdata={}
+        gdata['id'] = g['id']
+        gdata['name'] = g['name'].replace(" ", "")
+        groups.append(gdata)
+    form.group.choices = [(str(g['id']), str(g['name'])) for g in groups]
+
     if request.method == 'POST' and form.validate():
         addApiUrl = kongurl+"/apis"
         upstreamUrl = form.host.data+""+form.uri.data
@@ -253,10 +329,10 @@ def addAPI():
         apidata['Success'] = form.success.data
         apidata['Error'] = form.error.data
         apidata['apiid'] = apiID
-        db = get_db()
+        apidata['uid'] = session.get('uid')
         db.add_api(apidata)
         return redirect(url_for('index'))
-    
+   
     return render_template('addAPI.html', form=form)
 
 if __name__ == '__main__':
