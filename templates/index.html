@@ -1,18 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
 <p> </p>
+{% if (current_user.is_authenticated) %}
 <div><a class="button" href="/addAPI">Add API</a></div>
+{% endif %}
 {% for api in  api_list%}
 <p>
 <h3><a href="/displayAPI?apiid={{api.apiid}}">{{api.name}} ({{api.shortname}})</a>:
-<p>{{api.apidesc}}</p>
+<p>{{api.apidesc|safe}}</p>
 </p>
+{% if (current_user.is_authenticated) %}
       <div>
       <a class="button" href="/updateAPI?apiid={{api.apiid}}">update</a> 
       <a class="button" href="/deleteAPI?apiid={{api.apiid}}">delete</a>
       </div>
+{% endif %}
 <hr>
 {% endfor %}
+{% if (current_user.is_authenticated) %}
 <div><a class="button" href="/addAPI">Add API</a></div>
+{% endif %}
 <p> </p>
 {% endblock %} 

@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
-<script src="{{  url_for('static', filename='markdown.js') }}"></script>
 <h3>{{api.name}}</h3>
 <h4>{{api.shortname}} (版本: {{api.version}})</h4>
-<h4>{{api.desc}}</h4>
+<div class="description">
+{{ api.desc|safe }}
+</div>
 <h4>Host</h4>
 <div class="host">{{api.hosts[0]}}</div>
 <h4>Endpoint</h4>

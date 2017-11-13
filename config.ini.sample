@@ -9,3 +9,12 @@ host=http://140.110.240.65
 api_port=8000
 admin_port=8001
 ssl=false
+
+[iam]
+APP_PRIVATE_ID = 
+APP_PRIVATE_PASSWD = 
+APP_COMPANY_ID = 
+APP_COMPANY_UUID = 
+APP_DEPT_NODE_UUID = 
+ip = 
+

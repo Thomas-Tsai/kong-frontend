@@ -62,10 +62,15 @@
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav">
-        <li class="active"><a href="/index">Home</a></li>
-        <li><a href="/index">APIs</a></li>
+        <li><a href="/index">Home</a></li>
+        <li><a href="/all">APIs</a></li>
         <li><a href="/kong">KONG</a></li>
+{% if not (current_user.is_authenticated) %}
         <li><a href="/login">Login</a></li>
+{% endif %}
+{% if (current_user.is_authenticated) %}
+        <li><a href="/logout">Logout ({{ g.user.name }})</a></li>
+{% endif %}
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <!--<li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>-->

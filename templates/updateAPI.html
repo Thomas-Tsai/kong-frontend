@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+{% import 'wtf_tinymce/editor.html' as tinymce with context %}
 
 {% block content %}
+{{ super() }}
+{{ tinymce.init_wtf_tinymce() }}
 <h1>修改API</h1>
 {% from "_formhelpers.html" import render_field %}
 <form method='post' action="/saveAPI">

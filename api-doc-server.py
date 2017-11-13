@@ -1,22 +1,31 @@
+#-*- coding=UTF-8 -*-
 #!/bin/python 
-# -*- coding: utf-8 -*- 
 import requests
 import json
-import markdown
 from flask import Flask
 from flask import render_template
 from flask import request
 from flask import Flask, g
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, Response, abort
 from flask import session
 from wtforms import Form, BooleanField, StringField, TextAreaField, HiddenField, SelectField, validators
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
+from wtf_tinymce import wtf_tinymce
+from wtf_tinymce.forms.fields import TinyMceField
 import os.path
 import sys
 import configparser
+import base64
 import apidb
+import nchciam
 
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+wtf_tinymce.init_app(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
 APIList = []
 
 def get_db():
@@ -29,21 +38,37 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
+class User(UserMixin):
+
+    def __init__(self, id):
+        self.id = id
+        self.name = base64.b64decode(id).decode('utf-8')
+        
+    def __repr__(self):
+        return "%d/%s/%s" % (self.id, self.name)
+
+    def is_authenticated(self):
+        return True
+    def is_anonymous(self):
+        return False
+    def is_active(self):
+        return True
+
 class apiForm(Form):
 
     apiid = HiddenField('apiid')
-    version = StringField('Version', [validators.Length(min=1, max=64)])
-    name = StringField('name', [validators.Length(min=1, max=64)])
-    shortname = StringField('short name', [validators.Length(min=1, max=64)])
-    method = SelectField(u'method', choices=[('',''),('GET', 'GET'), ('POST', 'POST'),('DELETE', 'DELETE'), ('PATCH', 'PATCH'), ('PUT','PUT')])
-    uri = StringField('uri', [validators.Length(min=1, max=64)])
-    host = StringField('host', [validators.Length(min=1, max=64)])
-    group = SelectField(u'Servic/Group', choices=[('','0')])
-    description = TextAreaField('Description', [validators.optional(), validators.length(max=8192)])
-    params = TextAreaField('Params', [validators.optional(), validators.length(max=2048)])
-    example = TextAreaField('Example', [validators.optional(), validators.length(max=8192)])
-    success = TextAreaField('Success', [validators.optional(), validators.length(max=8192)])
-    error = TextAreaField('Error', [validators.optional(), validators.length(max=8192)])
+    version = StringField('* Version', [validators.Length(min=1, max=64)])
+    name = StringField('* Name', [validators.Length(min=1, max=64)])
+    shortname = StringField('* Short description', [validators.Length(min=1, max=64)])
+    method = SelectField('* Method', choices=[('',''),('GET', 'GET'), ('POST', 'POST'),('DELETE', 'DELETE'), ('PATCH', 'PATCH'), ('PUT','PUT')])
+    uri = StringField('* URI', [validators.Length(min=1, max=64)])
+    host = StringField('* Host', [validators.Length(min=1, max=64)])
+    group = SelectField(u'* Servic/Group', choices=[('','0')])
+    description = TinyMceField('Description', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
+    params = TinyMceField('Params', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
+    example = TinyMceField('Example', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
+    success = TinyMceField('Success', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
+    error = TinyMceField('Error', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -90,9 +115,22 @@ def runApi(url, method='get', data=''):
     return jData
 
 
+def is_admin():
+    cun = current_user.name
+    if cun == 'ckan':
+        return True
+    return False
+
+def is_myapi(apiid):
+    db = get_db()
+    row = db.get_uid(apiid)
+    apiuid=row[0]['uid']
+    if apiuid == session['uid']:
+        return True
+    return False
+
 @app.context_processor
 def inject_data():
-    session['uid'] = '1'
     groups = {}
     db = get_db()
     get_group = db.get_group()
@@ -105,7 +143,6 @@ def inject_data():
 
 @app.route('/')
 @app.route('/index')
-@app.route("/login")
 @app.route("/all")
 def index():
     listurl = kongurl + "/apis"
@@ -163,6 +200,7 @@ def kong():
     return render_template('kong.html', kong = kongstr)
 
 @app.route("/updateAPI")
+@login_required
 def updateAPI():
     db = get_db()
     form = apiForm(request.form)
@@ -177,46 +215,49 @@ def updateAPI():
 
     if request.method == 'GET':
         apiId = request.args.get('apiid')
-        apidata = runApi(kongurl+'/apis/'+apiId)
-        if 'methods' not in apidata: apidata['methods'] = ['GET']
-        if 'uris' not in apidata: apidata['uris'] = ['']
-        db.row_factory = dict_factory
-        rows = db.get_api(apiId)
-        apidata['shortname'] = ''
-        apidata['version'] = ''
-        apidata['desc'] = ''
-        apidata['params'] = ''
-        apidata['apigroup'] = ''
-        apidata['example'] = ''
-        apidata['success'] = ''
-        apidata['error'] = ''
-        for row in rows:
-            apidata['shortname'] = row['shortname']
-            apidata['version'] = row['version']
-            apidata['desc'] = row['description']
-            apidata['params'] = row['params']
-            apidata['apigroup'] = row['apigroup']
-            apidata['example'] = row['example']
-            apidata['success'] = row['success']
-            apidata['error'] = row['error']
-            apidata['uid'] = session.get('uid', 'uid error')
-        form.apiid.data = apiId
-        form.version.data = ''
-        form.name.data = apidata['name']
-        form.shortname.data = apidata['shortname']
-        form.method.data = apidata['methods'][0]
-        form.uri.data = apidata['uris'][0]
-        form.host.data = apidata['hosts'][0]
-        form.group.data = apidata['apigroup']
-        form.description.data = apidata['desc']
-        form.version.data = apidata['version']
-        form.params.data = apidata['params']
-        form.example.data = apidata['example']
-        form.success.data = apidata['success']
-        form.error.data = apidata['error']
-    return render_template('updateAPI.html', form=form)
+        if is_admin() == True or is_myapi(apiId):
+            apidata = runApi(kongurl+'/apis/'+apiId)
+            if 'methods' not in apidata: apidata['methods'] = ['GET']
+            if 'uris' not in apidata: apidata['uris'] = ['']
+            db.row_factory = dict_factory
+            rows = db.get_api(apiId)
+            apidata['shortname'] = ''
+            apidata['version'] = ''
+            apidata['desc'] = ''
+            apidata['params'] = ''
+            apidata['apigroup'] = ''
+            apidata['example'] = ''
+            apidata['success'] = ''
+            apidata['error'] = ''
+            for row in rows:
+                apidata['shortname'] = row['shortname']
+                apidata['version'] = row['version']
+                apidata['desc'] = row['description']
+                apidata['params'] = row['params']
+                apidata['apigroup'] = row['apigroup']
+                apidata['example'] = row['example']
+                apidata['success'] = row['success']
+                apidata['error'] = row['error']
+                apidata['uid'] = session.get('uid', 'uid error')
+            form.apiid.data = apiId
+            form.version.data = ''
+            form.name.data = apidata['name']
+            form.shortname.data = apidata['shortname']
+            form.method.data = apidata['methods'][0]
+            form.uri.data = apidata['uris'][0]
+            form.host.data = apidata['hosts'][0]
+            form.group.data = apidata['apigroup']
+            form.description.data = apidata['desc']
+            form.version.data = apidata['version']
+            form.params.data = apidata['params']
+            form.example.data = apidata['example']
+            form.success.data = apidata['success']
+            form.error.data = apidata['error']
+            return render_template('updateAPI.html', form=form)
+    return redirect(url_for('.index'))
 
 @app.route("/saveAPI", methods=['POST'])
+@login_required
 def saveAPI():
     db = get_db()
     form = apiForm(request.form)
@@ -231,36 +272,42 @@ def saveAPI():
 
     if request.method == 'POST' and form.validate():
         apiid = form.apiid.data
-        updateApiUrl = kongurl+"/apis/"+apiid
-        upstreamUrl = form.host.data+""+form.uri.data
-        upstreamUrl = upstreamUrl.replace('//', '/')
-        upstreamUrl = "http://"+upstreamUrl
-        updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
-        api = runApi(updateApiUrl, 'patch', updateApiData)
-        apidata={}
-        apidata['shortName'] = form.shortname.data
-        apidata['Desc'] = form.description.data
-        apidata['Version'] = form.version.data
-        apidata['Group'] = form.group.data
-        apidata['Params'] = form.params.data
-        apidata['Example'] = form.example.data
-        apidata['Success'] = form.success.data
-        apidata['Error'] = form.error.data
-        apidata['apiid'] = apiid
-        apidata['uid'] = session.get('uid', 'uid error')
-        db = get_db()
-        db.update_api(apidata)
-        return redirect(url_for('.index'))
+        if is_admin() == True or is_myapi(apiid):
+            updateApiUrl = kongurl+"/apis/"+apiid
+            upstreamUrl = form.host.data+""+form.uri.data
+            upstreamUrl = upstreamUrl.replace('//', '/')
+            upstreamUrl = "http://"+upstreamUrl
+            updateApiData = {'name':form.name.data, 'hosts':form.host.data, 'upstream_url':upstreamUrl, 'uris':form.uri.data, 'methods':form.method.data.upper()}
+            api = runApi(updateApiUrl, 'patch', updateApiData)
+            apidata={}
+            apidata['shortName'] = form.shortname.data
+            apidata['Desc'] = form.description.data
+            apidata['Version'] = form.version.data
+            apidata['Group'] = form.group.data
+            apidata['Params'] = form.params.data
+            apidata['Example'] = form.example.data
+            apidata['Success'] = form.success.data
+            apidata['Error'] = form.error.data
+            apidata['apiid'] = apiid
+            apidata['uid'] = session.get('uid', 'uid error')
+            db = get_db()
+            db.update_api(apidata)
+            return redirect(url_for('.index'))
+        else:
+            return redirect(url_for('.index'))
     return render_template('updateAPI.html', form=form)
     
 @app.route("/deleteAPI")
+@login_required
 def deleteAPI():
+
     if request.method == 'GET':
         apiId = request.args.get('apiid')
-        apidata = runApi(kongurl+'/apis/'+apiId, 'delete')
-        db = get_db()
-        db.delete_api(apiId)
-    return redirect(url_for('index'))
+        if is_admin() == True or is_myapi(apiId):
+            apidata = runApi(kongurl+'/apis/'+apiId, 'delete')
+            db = get_db()
+            db.delete_api(apiId)
+        return redirect(url_for('index'))
 
 @app.route("/api")
 @app.route("/displayAPI")
@@ -284,7 +331,7 @@ def displayAPI():
         for row in rows:
             apidata['shortname'] = row['shortname']
             apidata['desc'] = row['description']
-            apidata['params'] = markdown.markdown(row['params'])
+            apidata['params'] = row['params']
             apidata['version'] = row['version']
             apidata['apigroup'] = row['apigroup']
             apidata['example'] = row['example']
@@ -298,6 +345,7 @@ def displayAPI():
     return redirect(url_for('index'))
 
 @app.route('/addAPI', methods=['GET', 'POST'])
+@login_required
 def addAPI():
     db = get_db()
     form = apiForm(request.form)
@@ -334,6 +382,55 @@ def addAPI():
         return redirect(url_for('index'))
    
     return render_template('addAPI.html', form=form)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        nauth = nchciam.nchcIAM(config_file)
+        if nauth.login(username, password) == True:
+            user = User(nauth.id)
+            login_user(user)
+            session['uid'] = str(current_user.id)
+            session['uname'] = str(current_user.name)
+            if not request.args.get("next"):
+                return redirect(url_for('.index'))
+            return redirect(request.args.get("next"))
+        else:
+            return abort(401)
+    else:
+        return Response('''
+        <form action="" method="post">
+            <p><input type=text name=username>
+            <p><input type=password name=password>
+            <p><input type=submit value=Login>
+        </form>
+        ''')
+
+@app.before_request
+def before_request():
+    g.user = current_user
+
+# somewhere to logout
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return Response('<p>Logged out and redirect to <a href="/">homepage manually</a></p>')
+
+
+# handle login failed
+@app.errorhandler(401)
+def page_not_found(e):
+    return Response('<p>Login failed</p>')
+    
+    
+# callback to reload the user object        
+@login_manager.user_loader
+def load_user(userid):
+    return User(userid)
+
 
 if __name__ == '__main__':
 
