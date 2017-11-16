@@ -29,7 +29,7 @@ login_manager.login_view = "login"
 APIList = []
 
 def get_db():
-    idb = apidb.apidb(config_file)
+    idb = apidb.apidb(app.config_file)
     return idb
 
 def dict_factory(cursor, row):
@@ -69,6 +69,7 @@ class apiForm(Form):
     example = TinyMceField('Example', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
     success = TinyMceField('Success', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
     error = TinyMceField('Error', tinymce_options={'toolbar': 'insert | undo redo |  formatselect | bold italic backcolor  | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'})
+
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -145,7 +146,8 @@ def inject_data():
 @app.route('/index')
 @app.route("/all")
 def index():
-    listurl = kongurl + "/apis"
+    print("read config from "+app.config_file)
+    listurl = app.kongurl + "/apis"
     kongData = runApi(listurl)
     APIList = []
     apiData = kongData['data']
@@ -171,7 +173,7 @@ def index():
 @app.route("/group", methods=['GET','POST'])
 def group():
     
-    listurl = kongurl + "/apis"
+    listurl = app.kongurl + "/apis"
     groupid = request.args.get('groupid')
     if groupid == '':
         groupid='0'
@@ -195,7 +197,7 @@ def group():
 @app.route("/kong")
 def kong():
 
-    apidata = runApi(kongurl+'/')
+    apidata = runApi(app.kongurl+'/')
     kongstr = json.dumps(apidata, indent=4)
     return render_template('kong.html', kong = kongstr)
 
@@ -216,7 +218,7 @@ def updateAPI():
     if request.method == 'GET':
         apiId = request.args.get('apiid')
         if is_admin() == True or is_myapi(apiId):
-            apidata = runApi(kongurl+'/apis/'+apiId)
+            apidata = runApi(app.kongurl+'/apis/'+apiId)
             if 'methods' not in apidata: apidata['methods'] = ['GET']
             if 'uris' not in apidata: apidata['uris'] = ['']
             db.row_factory = dict_factory
@@ -273,7 +275,7 @@ def saveAPI():
     if request.method == 'POST' and form.validate():
         apiid = form.apiid.data
         if is_admin() == True or is_myapi(apiid):
-            updateApiUrl = kongurl+"/apis/"+apiid
+            updateApiUrl = app.kongurl+"/apis/"+apiid
             upstreamUrl = form.host.data+""+form.uri.data
             upstreamUrl = upstreamUrl.replace('//', '/')
             upstreamUrl = "http://"+upstreamUrl
@@ -304,7 +306,7 @@ def deleteAPI():
     if request.method == 'GET':
         apiId = request.args.get('apiid')
         if is_admin() == True or is_myapi(apiId):
-            apidata = runApi(kongurl+'/apis/'+apiId, 'delete')
+            apidata = runApi(app.kongurl+'/apis/'+apiId, 'delete')
             db = get_db()
             db.delete_api(apiId)
         return redirect(url_for('index'))
@@ -314,7 +316,7 @@ def deleteAPI():
 def displayAPI():
     if request.method == 'GET':
         apiId = request.args.get('apiid', '000')
-        apidata = runApi(kongurl+'/apis/'+apiId)
+        apidata = runApi(app.kongurl+'/apis/'+apiId)
         if 'methods' not in apidata: apidata['methods'] = ['GET']
         if 'uris' not in apidata: apidata['uris'] = ['']
         db = get_db()
@@ -340,7 +342,7 @@ def displayAPI():
             apidata['uid'] = session.get('uid', 'uid error')
 
         return render_template(
-            'displayAPI.html', api = apidata, kongapiurl=kongapiurl
+            'displayAPI.html', api = apidata, kongapiurl=app.kongapiurl
             )
     return redirect(url_for('index'))
 
@@ -360,7 +362,7 @@ def addAPI():
     form.group.choices = [(str(g['id']), str(g['name'])) for g in groups]
 
     if request.method == 'POST' and form.validate():
-        addApiUrl = kongurl+"/apis"
+        addApiUrl = app.kongurl+"/apis"
         upstreamUrl = form.host.data+""+form.uri.data
         upstreamUrl = upstreamUrl.replace('//', '/')
         upstreamUrl = "http://"+upstreamUrl
@@ -388,7 +390,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        nauth = nchciam.nchcIAM(config_file)
+        nauth = nchciam.nchcIAM(app.config_file)
         if nauth.login(username, password) == True:
             user = User(nauth.id)
             login_user(user)
@@ -457,6 +459,12 @@ if __name__ == '__main__':
     kong_admin_port = config['kong']['admin_port']
     kong_api_port = config['kong']['api_port']
     kong_base_url = config['kong']['host']
-    kongurl = kong_base_url+":"+kong_admin_port
-    kongapiurl = kong_base_url+":"+kong_api_port
-    app.run(debug=True,host='0.0.0.0',port=7788)
+    #kongurl = kong_base_url+":"+kong_admin_port
+    #kongapiurl = kong_base_url+":"+kong_api_port
+    #app.run(debug=True,host='0.0.0.0',port=7788)
+    app.config_file = config_file
+    app.kongapiurl = kong_base_url+":"+kong_api_port
+    app.kongurl = kong_base_url+":"+kong_admin_port
+    app.debug = True
+    app.testing = True
+    app.run(host='0.0.0.0')
