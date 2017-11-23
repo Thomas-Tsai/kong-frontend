@@ -14,6 +14,27 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET row_security = off;
 
+DROP DATABASE apis;
+--
+-- Name: apis; Type: DATABASE; Schema: -; Owner: thomas
+--
+
+CREATE DATABASE apis WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.UTF-8' LC_CTYPE = 'en_US.UTF-8';
+
+
+ALTER DATABASE apis OWNER TO thomas;
+
+\connect apis
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
@@ -35,7 +56,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: apigroup; Type: TABLE; Schema: public; Owner: kong
+-- Name: apigroup; Type: TABLE; Schema: public; Owner: thomas
 --
 
 CREATE TABLE apigroup (
@@ -44,10 +65,10 @@ CREATE TABLE apigroup (
 );
 
 
-ALTER TABLE apigroup OWNER TO kong;
+ALTER TABLE apigroup OWNER TO thomas;
 
 --
--- Name: apis; Type: TABLE; Schema: public; Owner: kong
+-- Name: apis; Type: TABLE; Schema: public; Owner: thomas
 --
 
 CREATE TABLE apis (
@@ -65,10 +86,10 @@ CREATE TABLE apis (
 );
 
 
-ALTER TABLE apis OWNER TO kong;
+ALTER TABLE apis OWNER TO thomas;
 
 --
--- Name: group_id_seq; Type: SEQUENCE; Schema: public; Owner: kong
+-- Name: group_id_seq; Type: SEQUENCE; Schema: public; Owner: thomas
 --
 
 CREATE SEQUENCE group_id_seq
@@ -79,17 +100,17 @@ CREATE SEQUENCE group_id_seq
     CACHE 1;
 
 
-ALTER TABLE group_id_seq OWNER TO kong;
+ALTER TABLE group_id_seq OWNER TO thomas;
 
 --
--- Name: group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: kong
+-- Name: group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: thomas
 --
 
 ALTER SEQUENCE group_id_seq OWNED BY apigroup.id;
 
 
 --
--- Name: user; Type: TABLE; Schema: public; Owner: kong
+-- Name: user; Type: TABLE; Schema: public; Owner: thomas
 --
 
 CREATE TABLE "user" (
@@ -99,10 +120,10 @@ CREATE TABLE "user" (
 );
 
 
-ALTER TABLE "user" OWNER TO kong;
+ALTER TABLE "user" OWNER TO thomas;
 
 --
--- Name: user_group; Type: TABLE; Schema: public; Owner: kong
+-- Name: user_group; Type: TABLE; Schema: public; Owner: thomas
 --
 
 CREATE TABLE user_group (
@@ -112,10 +133,10 @@ CREATE TABLE user_group (
 );
 
 
-ALTER TABLE user_group OWNER TO kong;
+ALTER TABLE user_group OWNER TO thomas;
 
 --
--- Name: user_group_id_seq; Type: SEQUENCE; Schema: public; Owner: kong
+-- Name: user_group_id_seq; Type: SEQUENCE; Schema: public; Owner: thomas
 --
 
 CREATE SEQUENCE user_group_id_seq
@@ -126,17 +147,17 @@ CREATE SEQUENCE user_group_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_group_id_seq OWNER TO kong;
+ALTER TABLE user_group_id_seq OWNER TO thomas;
 
 --
--- Name: user_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: kong
+-- Name: user_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: thomas
 --
 
 ALTER SEQUENCE user_group_id_seq OWNED BY user_group.id;
 
 
 --
--- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: kong
+-- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: thomas
 --
 
 CREATE SEQUENCE user_id_seq
@@ -147,38 +168,38 @@ CREATE SEQUENCE user_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_id_seq OWNER TO kong;
+ALTER TABLE user_id_seq OWNER TO thomas;
 
 --
--- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: kong
+-- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: thomas
 --
 
 ALTER SEQUENCE user_id_seq OWNED BY "user".id;
 
 
 --
--- Name: apigroup id; Type: DEFAULT; Schema: public; Owner: kong
+-- Name: apigroup id; Type: DEFAULT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY apigroup ALTER COLUMN id SET DEFAULT nextval('group_id_seq'::regclass);
 
 
 --
--- Name: user id; Type: DEFAULT; Schema: public; Owner: kong
+-- Name: user id; Type: DEFAULT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY "user" ALTER COLUMN id SET DEFAULT nextval('user_id_seq'::regclass);
 
 
 --
--- Name: user_group id; Type: DEFAULT; Schema: public; Owner: kong
+-- Name: user_group id; Type: DEFAULT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY user_group ALTER COLUMN id SET DEFAULT nextval('user_group_id_seq'::regclass);
 
 
 --
--- Name: apis apis_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+-- Name: apis apis_pkey; Type: CONSTRAINT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY apis
@@ -186,7 +207,7 @@ ALTER TABLE ONLY apis
 
 
 --
--- Name: apigroup group_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+-- Name: apigroup group_pkey; Type: CONSTRAINT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY apigroup
@@ -194,7 +215,7 @@ ALTER TABLE ONLY apigroup
 
 
 --
--- Name: user_group user_group_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+-- Name: user_group user_group_pkey; Type: CONSTRAINT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY user_group
@@ -202,11 +223,18 @@ ALTER TABLE ONLY user_group
 
 
 --
--- Name: user user_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+-- Name: user user_pkey; Type: CONSTRAINT; Schema: public; Owner: thomas
 --
 
 ALTER TABLE ONLY "user"
     ADD CONSTRAINT user_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
