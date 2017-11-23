@@ -9,10 +9,11 @@ A python flask version of kong frontend
     git clone ...
     cd kong-frontend
 
-## Prepare python virtual environment and install modules (optional)
+## Prepare python virtual environment and install modules (optional, develop|debug mode)
 
     python3 -m venv kong-env
     source kong-env/bin/active
+    python3 apiServer.py ## don't forgot initial db, config... before you in debug mode
     
 ## install python3 and pip
 
@@ -29,11 +30,11 @@ A python flask version of kong frontend
 
     apt-get install apache2 libapache2-mod-wsgi-py3
     cp apache2-site.conf /etc/apache2/sites-available/kongfd.conf
-    mkdir -p /var/www/kong-frontend/
-    cp run.wsgi /var/www/kong-frontend/
+    cp kong-frontend /var/www/
     a2ensite kongfd
     
 ## config file
+
     mkdir /etc/kong-frontend/
     cp config.ini.sample /etc/kong-frontend/config.ini
     ## manual chang kong url and db information
