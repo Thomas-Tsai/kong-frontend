@@ -3,7 +3,7 @@ import sys
 import logging
 import os.path
 import configparser
-sys.path.insert(0,"/var/www/kong/kong-frontend")
+sys.path.insert(0,"/var/www/kong-frontend")
 logging.basicConfig(stream=sys.stderr)
 
 from apiServer import app as application
