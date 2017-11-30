@@ -1,6 +1,6 @@
 [db]
 database=apis
-user=thomas
+user=kong
 password=kongkong
 host=127.0.0.1
 
